@@ -257,3 +257,25 @@ Construida tal cual se planeó en §9 (misma arquitectura real ya probada en Del
 **Verificado real, con Playwright — nunca solo "responde 200"**: portal real navegado (Inicio, Jerarquía de roles, API), Swagger UI real mostrando los endpoints reales del backend (`OmniUser — API`, `OAS 3.0`, con `/auth/register`, `/auth/login/step1`, etc. reales); Compodoc real mostrando el grafo real del proyecto (9 módulos, 6 controllers, 11 injectables, 13 classes, 1 guard, 31 interfaces); y, lo más importante, confirmado que Compodoc SÍ parsea los comentarios TSDoc reales — la página real de `UsersService` muestra, tal cual, el comentario de documentación real escrito en `users.service.ts` (no un resumen genérico, el texto exacto).
 
 *(Próxima entrada: lo que siga después de esta fase — ver `PLAN_DESARROLLO.md` para lo pendiente real: `PRUEBAS_SEGURIDAD.md` real contra este código, pruebas automatizadas, Fase 2 de login con Google OAuth si se pide.)*
+
+## 6. Pruebas automatizadas reales — `jest`, 25 tests, sin mocks de Prisma (2026-08-26)
+
+Cierra el último pendiente de los 4 identificados tras completar Etapa 1 + jerarquía: `APRENDIZAJE.md` → portal de documentación → `PRUEBAS_SEGURIDAD.md` → **pruebas automatizadas**, en ese orden explícito pedido por el dueño.
+
+**2 niveles reales, mismo criterio "sin atajos simulados" del resto del proyecto:**
+
+- **Funciones puras** (`common/utils/*.spec.ts`) — sin ninguna dependencia externa, corren instantáneo: `totp.util.spec.ts` (RFC 6238 real vía `otplib` — incluye el caso real que probaría un bug de "cualquier código pasa": un código válido de OTRO secreto se rechaza), `crypto.util.spec.ts` (AES-256-GCM real — el mismo secreto cifrado 2 veces da resultados distintos por el IV aleatorio, y un solo byte manipulado en el texto cifrado hace que el `authTag` real de GCM rechace el descifrado), `escape-html.util.spec.ts` (payload real de XSS neutralizado).
+- **Integración real contra Postgres** (`users/users.service.spec.ts`, `roles/roles.service.spec.ts`) — `TestingModule` de NestJS con `PrismaService` REAL (nunca un mock de Prisma), conectado al mismo Postgres de desarrollo. Prueba exactamente la lógica de jerarquía del §3: un actor no puede crear/gestionar una cuenta o un rol de nivel igual/superior al suyo (incluye el caso real de auto-escalación y el de editar sin cambiar rol, solo `is_active`), `max_count` real se respeta contra cuentas activas, un rol `is_system` no puede perder su `level`/`max_count` por esta vía. Cada `it` que espera un rechazo también confirma en Postgres que el estado real no cambió — nunca basta con que se haya lanzado el error esperado. `afterAll` borra los datos de prueba reales creados (confirmado vacío después con `psql` directo).
+
+**2 hallazgos reales de infraestructura — nuevos en este proyecto, ningún hermano (Espiral/Dely Doggy) los había topado porque ninguno tiene todavía un `*.spec.ts` que importe `PrismaService`:**
+
+1. El cliente Prisma 7 generado (`generated/prisma/client.ts`) usa imports relativos con extensión `.js` explícita (`import * as $Class from "./internal/class.js"` — estilo de salida ESM de TypeScript moderno), pero en disco solo existe el `.ts` fuente. Jest, en modo CommonJS con `moduleFileExtensions: ["js","json","ts"]`, busca literalmente un archivo `.js` y falla con `Cannot find module`. Arreglo real, mínimo, documentado por el propio `ts-jest` para este caso exacto: `"moduleNameMapper": { "^(\\.{1,2}/.*)\\.js$": "$1" }` en el `jest` de `package.json` — reescribe cualquier import relativo terminado en `.js` quitándole la extensión, dejando que la resolución normal de Jest encuentre el `.ts`.
+2. Con eso resuelto, apareció un segundo error real: `A dynamic import callback was invoked without --experimental-vm-modules` — el motor de consultas de Prisma 7 (WASM, incluso usando el adaptador `pg`) usa un `import()` dinámico interno, y el contexto VM que usa Jest para correr el código no soporta `import()` dinámico salvo que Node arranque con `--experimental-vm-modules`. Arreglo real: agregado a los 4 scripts `test`/`test:watch`/`test:cov`/`test:e2e` de `package.json` (`NODE_OPTIONS=--experimental-vm-modules jest ...`), para que correr `npm test` ya lo incluya siempre — nadie tiene que recordarlo a mano ni pasarlo por línea de comandos.
+
+**Resultado real, verificado dentro del contenedor (`docker compose exec omniuser_backend npm test`):**
+```
+Test Suites: 5 passed, 5 total
+Tests:       25 passed, 25 total
+```
+
+*(Con esto, los 4 pendientes identificados el 2026-08-26 para considerar Etapa 1 + jerarquía "terminados" están completos. Próxima entrada: Fase 2 de login con Google OAuth, si se pide.)*
