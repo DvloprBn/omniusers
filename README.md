@@ -27,6 +27,14 @@ docker compose up -d
 - Cuentas de prueba (sembradas automáticamente, password `TestOnly123!`): `super+omniuser@example.com`, `director+omniuser@example.com`, `admin+omniuser@example.com`, `manager+omniuser@example.com`, `staff+omniuser@example.com`, `usuario+omniuser@example.com`.
 - En desarrollo, `/dev/cuentas-de-prueba` deja saltar entre roles con un login real (nunca un bypass).
 
+## Pruebas
+
+25 tests reales (`jest`), sin mocks de Prisma — 3 sobre funciones puras (TOTP, cifrado AES-256-GCM, escape HTML) y 2 de integración contra el Postgres real de desarrollo, probando la jerarquía de roles.
+
+```bash
+docker compose exec omniuser_backend npm test
+```
+
 ## Documentación
 
 Este proyecto se documenta igual que se construye — sin atajos:

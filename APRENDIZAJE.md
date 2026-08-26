@@ -75,3 +75,16 @@ Un error real que tuvimos al construir esto (ver `DOCUMENTO_VIVO_ARQUITECTURA.md
 - `omniuser_frontend` — Next.js, mismo criterio de volumen para hot-reload.
 
 Los 4 se comunican por una red interna de Docker (`omniuser_network`) usando el NOMBRE del servicio como si fuera un dominio real (`omniuser_backend:3000` desde dentro de la red) — nunca `localhost`, que dentro de un contenedor se refiere al contenedor mismo, no a sus vecinos.
+
+## 10. Por qué las pruebas de jerarquía usan Postgres real, no un Prisma simulado
+
+`users/users.service.spec.ts` y `roles/roles.service.spec.ts` NO usan un mock de `PrismaService` (algo como `{ findUnique: jest.fn().mockResolvedValue(...) }`). Usan el `PrismaService` REAL, conectado al mismo Postgres real de desarrollo, dentro de un `TestingModule` de NestJS. La razón real: un mock solo prueba que el código llama a Prisma con los argumentos que TÚ programaste que esperara — nunca prueba que la consulta real, contra una base de datos real, con datos reales, produce el resultado correcto. La regla que se prueba aquí (`assertCanManageRole`) depende de datos reales en Postgres (`roles.level`, cuántas cuentas activas tiene cada rol) — un mock la volvería una prueba de "¿programé el mock bien?", no de "¿la regla de negocio real funciona?".
+
+El costo real de esto: cada prueba debe limpiar después de sí misma (`afterAll` con `deleteMany` sobre los datos de prueba creados, confirmado vacío con una consulta directa) — a diferencia de un mock, que no deja rastro porque nunca tocó nada real. Es un costo aceptado a propósito, mismo criterio de "sin atajos simulados" de todo el proyecto.
+
+**Hallazgo real de infraestructura en el camino** (nuevo en este proyecto — ni Espiral ni Dely Doggy lo habían topado, porque ninguno tiene todavía un test que importe `PrismaService`): el cliente de Prisma 7 generado usa dos mecanismos que Jest, por defecto, no soporta.
+
+1. Sus imports internos usan extensión `.js` explícita (`import * as $Class from "./internal/class.js"`) aunque en disco solo existe el `.ts` — un patrón de salida ESM moderno de TypeScript. Jest, corriendo en modo CommonJS, busca literalmente un archivo `.js` y no lo encuentra. Se resuelve diciéndole a Jest que reescriba cualquier import relativo terminado en `.js` quitándole la extensión (`moduleNameMapper` en el `jest` de `package.json`), para que la resolución normal encuentre el `.ts`.
+2. El motor de consultas de Prisma 7 usa un `import()` dinámico internamente (incluso usando el adaptador `pg`, no el motor binario clásico) — y el entorno aislado (VM) donde Jest ejecuta el código de cada test no soporta `import()` dinámico salvo que Node arranque con la bandera `--experimental-vm-modules`. Se agregó esa bandera a los 4 scripts `test*` de `package.json`, para que `npm test` ya la incluya siempre.
+
+La lección real detrás de ambos: una herramienta (Jest) diseñada originalmente para CommonJS y una librería (Prisma 7) que ya genera código con convenciones de módulos ESM modernas no siempre encajan solas — el error que se ve (`Cannot find module`, `dynamic import callback...`) rara vez explica la causa real por sí solo; hace falta entender qué sistema de módulos espera cada lado.
