@@ -221,4 +221,26 @@ Todo el diseño de §1 construido tal cual — `omniuser_backend` (NestJS 11 + P
 
 `tsc`/compilación limpia en ambos lados (`Found 0 errors` real del watcher de Nest; sin overlay de error real en Next.js — el único stack trace que aparece en los logs de desarrollo es el mecanismo interno normal de Next.js para `redirect()`, no un error real de la aplicación).
 
+## 3. Jerarquía real de roles — Super/Director (1) → Admin/Manager/Staff (varios) → Usuario público (2026-08-26)
+
+Pedido explícito del dueño, con correos reales de ejemplo (`dvloprbn@gmail.com` → `director+dvloprbn@gmail.com` → …) — implementado con placeholders `@example.com` en el seed público (ver §4 más abajo, decisión real sobre correos reales vs. repo público).
+
+**Schema**: `roles` gana `level` (Int, 0=`usuario` … 5=`super`) y `max_count` (Int?, `null`=sin límite). Sembrado real: `usuario`=0, `staff`=1, `manager`=2, `admin`=3, `director`=4 (`max_count:1`), `super`=5 (`max_count:1`) — los 6 marcados `is_system:true` (protegidos de borrado; `director`/`super` además de renombrado/cambio de nivel).
+
+**Regla real de gestión** (`UsersService.assertCanManageRole`, corre en `create`/`update`): quien actúa (`actor.roleLevel`, leído en vivo en `JwtStrategy.validate` — igual que `role`/`mustChangePassword`, nunca del payload firmado) solo puede asignar o editar una cuenta de nivel **estrictamente menor** al suyo. Un Admin puede dar de alta Manager/Staff, nunca otro Admin ni Director/Super — ni siquiera para desactivarlo. Mismo candado real, en espejo, en `RolesService.create`/`update`: nadie puede crear o dejar un rol (propio o de catálogo) en un nivel igual/mayor al suyo — cerraría una escalada real de privilegios (un Admin creando un rol nivel 10 sería, en los hechos, crearse un jefe imaginario con más autoridad que su propio jefe real).
+
+**`max_count` real**: se cuenta contra cuentas ACTIVAS únicamente (`is_active:true`) — desactivar al Director real libera el cupo para nombrar uno nuevo, sin necesidad de "borrar" al anterior (preserva el historial real, mismo criterio que el resto del proyecto). Al reasignar el rol de una cuenta YA EXISTENTE, esa cuenta se excluye de su propio conteo (`excludeUserId`) — reconfirmarle "director" al Director real no debe rechazarse por "ya hay 1".
+
+**Puertas gruesas ampliadas**: `UsersController`/`RolesController` pasan de `@Roles('admin','super')` a `@Roles('admin','director','super')` — la regla FINA de "a quién" vive en el service, no en el guard (mismo patrón real ya usado en Dely Doggy para `local-deliveries`: guard grueso + candado fino de service).
+
+**Frontend**: `/admin` ahora acepta cualquier rol real de la jerarquía (`staff`→`super`), nunca `usuario` — pero "Usuarios"/"Roles" (nav Y accesos rápidos del dashboard) solo se muestran a `admin`/`director`/`super`; `admin/usuarios` y `admin/roles` redirigen de vuelta a `/admin` si alguien fuerza la URL directa (el backend ya lo rechaza real con 403, esto solo evita un error crudo sin manejar). **Hallazgo real durante la verificación con Playwright**: el dashboard (`admin/page.tsx`) tenía sus 2 atajos "Usuarios"/"Roles" SIN ningún candado de rol — el nav sí los ocultaba bien, el dashboard no. No era un hueco de seguridad real (el backend y las sub-páginas ya rechazaban el acceso), pero sí una inconsistencia real de UX — corregido con el mismo candado de rol que ya usa el nav.
+
+**Verificado real, con `curl`**: Admin (nivel 3) intentando crear un Director (nivel 4) → 403 real; Admin creando un Manager (nivel 2, sí permitido) → 201 real; Super intentando crear un SEGUNDO Director (ya había 1 sembrado, `max_count:1`) → 409 real con el conteo correcto; Super intentando crear un rol nuevo de nivel 5 (igual al suyo) → 403 real. Playwright real confirmó visualmente: Director ve Usuarios/Roles en el nav y el dashboard; Manager y Staff no ven ninguno de los dos, en ningún lado de la UI. Todo dato de prueba borrado después.
+
+## 4. Correos reales vs. repo público — decisión real (2026-08-26)
+
+El dueño pidió usar su correo real (`dvloprbn@gmail.com` y variantes `rol+dvloprbn@gmail.com`) para las pruebas reales de esta jerarquía — pero confirmó que el repo real de este proyecto va a ser público (ver conversación: sirve de portafolio real, y la seguridad real de OmniUser nunca depende de que el código sea secreto). Poner un correo real en un archivo commiteado a un repo público lo deja visible para siempre (incluido el historial de git, aunque se borre después) — un blanco real de scraping/spam.
+
+**Resuelto sin tocar `seed.ts`**: el seed real se queda con los placeholders `@example.com` (código real, seguro de mostrar en el repo). Para probar con el correo real del dueño, se usa el flujo YA CONSTRUIDO — `POST /users` (alta administrativa real, `/admin/usuarios`) o `POST /auth/register` (registro público) — nunca hace falta que el correo real toque ningún archivo versionado.
+
 *(Próxima entrada: lo que siga después de esta fase — ver `PLAN_DESARROLLO.md` para lo pendiente real: documentación automatizada (`docs/` + Compodoc, §9), `PRUEBAS_SEGURIDAD.md` real contra este código, Fase 2 de login con Google OAuth si se pide.)*

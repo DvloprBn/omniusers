@@ -12,6 +12,10 @@ export interface Role {
   name: string;
   description: string | null;
   is_system: boolean;
+  /** Jerarquía real (0 = público, 5 = super) — ver `omniuser_backend/src/users/users.service.ts`. */
+  level: number;
+  /** Tope real de cuentas activas — `null` = sin límite. */
+  max_count: number | null;
   created_at: string;
 }
 

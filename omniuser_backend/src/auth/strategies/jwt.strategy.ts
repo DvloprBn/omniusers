@@ -51,7 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     const user = await this.prisma.users.findUnique({
       where: { user_id: payload.sub },
-      select: { is_active: true, must_change_password: true, roles: { select: { name: true } } },
+      select: { is_active: true, must_change_password: true, roles: { select: { name: true, level: true } } },
     });
     if (!user || !user.is_active) {
       throw new UnauthorizedException();
@@ -59,6 +59,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       userId: payload.sub,
       role: user.roles.name,
+      roleLevel: user.roles.level,
       mustChangePassword: user.must_change_password,
     };
   }

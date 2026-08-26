@@ -4,10 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clientApiRequest } from '@/lib/client-api';
 
-/** Mismos 3 correos/contraseña reales que siembra `prisma/seed.ts` (`TEST_PASSWORD`) — si cambia ahí, hay que cambiarlo aquí también. */
+/** Mismos 6 correos/contraseña reales que siembra `prisma/seed.ts` (`TEST_PASSWORD`) — si cambia ahí, hay que cambiarlo aquí también. */
 const TEST_ACCOUNTS = [
   { email: 'super+omniuser@example.com', role: 'super' },
+  { email: 'director+omniuser@example.com', role: 'director' },
   { email: 'admin+omniuser@example.com', role: 'admin' },
+  { email: 'manager+omniuser@example.com', role: 'manager' },
+  { email: 'staff+omniuser@example.com', role: 'staff' },
   { email: 'usuario+omniuser@example.com', role: 'usuario' },
 ] as const;
 const TEST_PASSWORD = 'TestOnly123!';

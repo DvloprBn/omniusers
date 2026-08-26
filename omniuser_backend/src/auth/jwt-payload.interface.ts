@@ -21,6 +21,8 @@ export interface JwtPayload {
 export interface AuthenticatedUser {
   userId: string;
   role: string;
+  /** Nivel real de jerarquía del rol actual (`roles.level`) — leído en vivo, igual que `role`: si el rol de la cuenta cambia, el nivel debe reflejarlo de inmediato, no hasta que el access token expire por su cuenta. Usado por `UsersService` para decidir "quién puede gestionar a quién" (ver `assertCanManageRole`). */
+  roleLevel: number;
   mustChangePassword: boolean;
 }
 

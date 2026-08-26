@@ -37,6 +37,18 @@ model roles {
   /// nunca se pueden borrar, para que nunca quede el sistema sin ningún
   /// rol con acceso administrativo real.
   is_system   Boolean  @default(false)
+  /// Jerarquía real (0 = público/`usuario`, 5 = `super`) — quien gestiona
+  /// cuentas (`UsersService`) solo puede asignar/editar un rol de nivel
+  /// ESTRICTAMENTE MENOR al suyo propio (un Admin puede dar de alta
+  /// Manager/Staff, nunca otro Admin ni Director/Super). No reemplaza a
+  /// `@Roles(...)` en los guards (eso sigue siendo la puerta gruesa por
+  /// endpoint) — esto es la regla fina de "quién puede gestionar a quién"
+  /// dentro de un endpoint ya permitido.
+  level       Int      @default(0)
+  /// Tope real de cuentas ACTIVAS con este rol — `null` = sin límite.
+  /// `1` para Super/Director (cargos reales de una sola persona);
+  /// `UsersService` lo revisa antes de crear o reasignar una cuenta.
+  max_count   Int?
   created_at  DateTime @default(now()) @db.Timestamptz(6)
 
   users users[]

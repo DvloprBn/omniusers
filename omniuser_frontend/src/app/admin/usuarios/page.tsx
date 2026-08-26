@@ -1,9 +1,18 @@
+import { redirect } from 'next/navigation';
 import { serverFetch } from '@/lib/api';
-import type { AdminUser, Role } from '@/lib/types';
+import type { AdminUser, AuthenticatedUser, Role } from '@/lib/types';
 import { CreateUserForm } from './create-user-form';
 import { UserRowActions } from './user-row-actions';
 
 export default async function AdminUsuariosPage() {
+  // Redirect real de UX si un staff/manager fuerza la URL directa — el
+  // backend YA lo rechaza real con 403 (RolesGuard), esto solo evita un
+  // error crudo sin manejar en vez de una salida ordenada.
+  const me = await serverFetch<AuthenticatedUser>('/auth/me');
+  if (!['admin', 'director', 'super'].includes(me.role)) {
+    redirect('/admin');
+  }
+
   const [users, roles] = await Promise.all([serverFetch<AdminUser[]>('/users'), serverFetch<Role[]>('/roles')]);
 
   return (

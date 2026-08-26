@@ -5,10 +5,14 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/jwt-payload.interface';
 
+// Puerta gruesa real: cualquiera de estos 3 roles puede ENTRAR — la regla
+// fina de "qué nivel puede crear/editar" vive en RolesService, no aquí.
 @Controller('roles')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'super')
+@Roles('admin', 'director', 'super')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
@@ -18,13 +22,13 @@ export class RolesController {
   }
 
   @Post()
-  create(@Body() dto: CreateRoleDto) {
-    return this.rolesService.create(dto);
+  create(@Body() dto: CreateRoleDto, @CurrentUser() actor: AuthenticatedUser) {
+    return this.rolesService.create(dto, actor);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
-    return this.rolesService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto, @CurrentUser() actor: AuthenticatedUser) {
+    return this.rolesService.update(id, dto, actor);
   }
 
   @Delete(':id')
