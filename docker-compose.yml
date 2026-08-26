@@ -57,7 +57,9 @@ services:
       - "127.0.0.1:5521:5555" # Prisma Studio: SOLO localhost, nunca debe salir a la red.
     environment:
       NODE_ENV: development
-      ALLOWED_ORIGINS: "http://localhost:3031"
+      # localhost:8096 (omniuser_docs) necesita leer /api-json desde el
+      # navegador del usuario.
+      ALLOWED_ORIGINS: "http://localhost:3031,http://localhost:8096"
       FRONTEND_URL: "http://localhost:3031"
       REDIS_HOST: omniuser_redis
       REDIS_PORT: 6379
@@ -106,6 +108,37 @@ services:
       - no-new-privileges:true
     command: npm run dev
 
+  # --- SERVICIO 5: DOCUMENTACIÓN TÉCNICA (omniuser_docs) ---
+  omniuser_docs:
+    build:
+      context: ./docs
+    container_name: omniuser_docs
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8096:8000" # Solo localhost — un portal de documentación técnica es, en los hechos, un mapa de la arquitectura interna (OWASP API8).
+    volumes:
+      - ./docs:/docs:ro
+    networks:
+      - omniuser_network
+    entrypoint: ["mkdocs", "serve", "--dev-addr=0.0.0.0:8000"]
+
+  # --- SERVICIO 6: DOCUMENTACIÓN AUTOGENERADA DEL BACKEND (omniuser_compodoc) ---
+  omniuser_compodoc:
+    build:
+      context: ./omniuser_backend
+      dockerfile: Dockerfile.dev
+    container_name: omniuser_compodoc
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8097:8080" # Mismo criterio OWASP API8 que omniuser_docs.
+    volumes:
+      - ./omniuser_backend:/usr/src/app
+      - omniuser_node_modules:/usr/src/app/node_modules
+      - omniuser_compodoc_output:/usr/src/app/documentation
+    networks:
+      - omniuser_network
+    command: npx compodoc -p tsconfig.json -d documentation -s -w --host 0.0.0.0 --port 8080
+
 networks:
   omniuser_network:
 
@@ -113,3 +146,4 @@ volumes:
   omniuser_db_data:
   omniuser_redis_data:
   omniuser_node_modules:
+  omniuser_compodoc_output:

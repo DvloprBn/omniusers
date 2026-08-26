@@ -243,4 +243,17 @@ El dueño pidió usar su correo real (`dvloprbn@gmail.com` y variantes `rol+dvlo
 
 **Resuelto sin tocar `seed.ts`**: el seed real se queda con los placeholders `@example.com` (código real, seguro de mostrar en el repo). Para probar con el correo real del dueño, se usa el flujo YA CONSTRUIDO — `POST /users` (alta administrativa real, `/admin/usuarios`) o `POST /auth/register` (registro público) — nunca hace falta que el correo real toque ningún archivo versionado.
 
-*(Próxima entrada: lo que siga después de esta fase — ver `PLAN_DESARROLLO.md` para lo pendiente real: documentación automatizada (`docs/` + Compodoc, §9), `PRUEBAS_SEGURIDAD.md` real contra este código, Fase 2 de login con Google OAuth si se pide.)*
+## 5. Documentación automatizada real — `docs/` + Compodoc (2026-08-26)
+
+Construida tal cual se planeó en §9 (misma arquitectura real ya probada en Dely Doggy) — 2 contenedores nuevos:
+
+- **`omniuser_docs`** (puerto 8096, `127.0.0.1` únicamente) — MkDocs Material (`squidfunk/mkdocs-material:9.5` + plugin `mkdocs-swagger-ui-tag`), 3 páginas reales (`index.md`, `roles.md` con el detalle completo de la jerarquía del §3, `api.md` con Swagger UI real embebido).
+- **`omniuser_compodoc`** (puerto 8097, `127.0.0.1` únicamente) — documentación autogenerada del backend completo (`npx compodoc -p tsconfig.json -d documentation -s -w`), parseando los comentarios TSDoc reales del código (ver `PLAN_DESARROLLO.md` §7 — el estándar de comentarios de este proyecto existe justo para esto).
+
+**`ALLOWED_ORIGINS` del backend** ganó `http://localhost:8096` — sin esto, el navegador bloquea la petición real que `api.md` hace a `http://localhost:3030/api-json` (CORS). Hallazgo real recordado de la sesión anterior de Dely Doggy: `docker compose restart` NO relee variables de entorno nuevas — hizo falta `--force-recreate` en `omniuser_backend` para que el `ALLOWED_ORIGINS` nuevo surtiera efecto real.
+
+**A diferencia de Dely Doggy** (cuyo `mkdocs.yml` real incluye `roles.md` en el nav pero el archivo nunca se escribió — hallazgo encontrado al investigar esta misma arquitectura, nunca corregido allá), aquí `roles.md` sí se escribió completo desde el principio — mismo contenido real que `DOCUMENTO_VIVO_ARQUITECTURA.md` §3, en formato de referencia rápida.
+
+**Verificado real, con Playwright — nunca solo "responde 200"**: portal real navegado (Inicio, Jerarquía de roles, API), Swagger UI real mostrando los endpoints reales del backend (`OmniUser — API`, `OAS 3.0`, con `/auth/register`, `/auth/login/step1`, etc. reales); Compodoc real mostrando el grafo real del proyecto (9 módulos, 6 controllers, 11 injectables, 13 classes, 1 guard, 31 interfaces); y, lo más importante, confirmado que Compodoc SÍ parsea los comentarios TSDoc reales — la página real de `UsersService` muestra, tal cual, el comentario de documentación real escrito en `users.service.ts` (no un resumen genérico, el texto exacto).
+
+*(Próxima entrada: lo que siga después de esta fase — ver `PLAN_DESARROLLO.md` para lo pendiente real: `PRUEBAS_SEGURIDAD.md` real contra este código, pruebas automatizadas, Fase 2 de login con Google OAuth si se pide.)*

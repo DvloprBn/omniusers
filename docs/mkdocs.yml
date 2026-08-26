@@ -1,0 +1,14 @@
+site_name: OmniUser — Documentación Técnica
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+
+nav:
+  - Inicio: index.md
+  - Jerarquía de roles: roles.md
+  - API (OpenAPI): api.md
+
+plugins:
+  - swagger-ui-tag
