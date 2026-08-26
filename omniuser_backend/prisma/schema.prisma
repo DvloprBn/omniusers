@@ -1,0 +1,151 @@
+// Prisma 7 (instalado: ver package.json) movió la URL de conexión fuera de
+// este archivo — ahora vive en prisma.config.ts. El generador "prisma-client"
+// (sucesor de "prisma-client-js") genera a una carpeta propia en vez de
+// node_modules/@prisma/client: PrismaService deberá importar desde
+// "../../generated/prisma/client", no desde "@prisma/client".
+generator client {
+  provider      = "prisma-client"
+  output        = "../generated/prisma"
+  // Sin esto, Prisma infiere el formato a partir de tsconfig.json
+  // ("module": "nodenext") y genera ESM puro (usa import.meta.url) — pero
+  // este proyecto es CommonJS (sin "type":"module" en package.json), lo
+  // que rompe en runtime con "exports is not defined in ES module scope".
+  moduleFormat  = "cjs"
+  // node:24-alpine (ver Dockerfile.dev) usa musl, no glibc — sin este
+  // binaryTarget, "prisma generate" produce un engine que no corre dentro
+  // del contenedor (falla en runtime, no en build).
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Rol dinámico (tabla real, no un enum de Postgres) — se puede crear un
+/// rol nuevo (ej. "editor", "soporte") sin ningún deploy de código nuevo.
+/// Lo que SÍ requiere código es que un endpoint concreto empiece a aceptar
+/// ese nombre de rol en su `@Roles(...)` — "dinámico" aquí significa que el
+/// CATÁLOGO de roles es editable en caliente, no que cualquier rol nuevo
+/// obtenga automáticamente permisos en cualquier endpoint (ver
+/// PLAN_DESARROLLO.md §4, punto 3, para el porqué de esta elección de
+/// diseño y su límite real).
+model roles {
+  role_id     Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(200)
+  /// Roles sembrados que el sistema necesita para funcionar (ej. "admin") —
+  /// nunca se pueden borrar, para que nunca quede el sistema sin ningún
+  /// rol con acceso administrativo real.
+  is_system   Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  users users[]
+}
+
+/// Una cuenta real del sistema — el centro de todo el módulo. `password_hash`
+/// es un HASH de una vía (bcrypt): el servidor nunca puede "leer" la
+/// contraseña real de vuelta, solo comparar. `totp_secret_encrypted` es
+/// distinto: es CIFRADO (reversible con una llave), porque el servidor sí
+/// necesita poder leerlo de vuelta para verificar el código de 6 dígitos
+/// que genera la app de 2FA del usuario en cada intento de login.
+model users {
+  user_id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String    @unique @db.VarChar(255)
+  password_hash        String
+  name                 String?   @db.VarChar(150)
+  role_id              Int
+  /// true tras un alta administrativa con contraseña temporal — bloquea
+  /// cualquier endpoint autenticado que no sea "cambiar mi contraseña"
+  /// hasta que la cuenta la reemplace de verdad (ver JwtAuthGuard).
+  must_change_password Boolean   @default(false)
+  is_active            Boolean   @default(true)
+  /// Cifrado en reposo (AES-256-GCM, ver TwoFactorService) — nunca en
+  /// texto plano. `null` hasta que la cuenta complete el setup real de 2FA.
+  totp_secret_encrypted String?
+  totp_enabled           Boolean  @default(false)
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  roles                  roles                  @relation(fields: [role_id], references: [role_id], onDelete: Restrict)
+  refresh_tokens         refresh_tokens[]
+  totp_recovery_codes    totp_recovery_codes[]
+  password_reset_tokens  password_reset_tokens[]
+}
+
+/// Sesión real de un usuario — NO es un JWT (a diferencia del access
+/// token). Es un valor aleatorio de alta entropía; solo su hash SHA-256 se
+/// guarda aquí, nunca el valor real. Rotación con ventana de gracia: cada
+/// uso marca este token `revoked` y crea uno nuevo — si el mismo token
+/// revocado se reintenta usar DESPUÉS de la ventana de gracia, es la señal
+/// real de que alguien más lo robó y ya lo usó, y se revocan TODAS las
+/// sesiones de esa cuenta de una vez (ver AuthService.refresh).
+model refresh_tokens {
+  token_id   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  revoked    Boolean   @default(false)
+  used_at    DateTime? @db.Timestamptz(6)
+  ip_address String?   @db.VarChar(45)
+  user_agent String?
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+
+  users users @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+/// Código de un solo uso real para cuando el usuario pierde el dispositivo
+/// con su app de 2FA (Google Authenticator/Authy/etc.) — se generan 10 al
+/// activar 2FA, se muestran al usuario UNA sola vez, y se guardan aquí
+/// HASHEADOS (igual que una contraseña — nunca en texto plano). A
+/// diferencia de `totp_secret_encrypted` (que sí se puede descifrar), un
+/// código de recuperación nunca necesita volver a mostrarse, solo
+/// compararse contra lo que el usuario escriba — por eso hash, no cifrado.
+model totp_recovery_codes {
+  code_id    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  code_hash  String
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  users users @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+/// Token real de un solo uso para el flujo "olvidé mi contraseña" — mismo
+/// criterio que `refresh_tokens`: solo se guarda el hash, nunca el valor
+/// real que viaja en el link del correo. Vigencia corta (2 horas, ver
+/// AuthService) y se invalida cualquier token anterior sin usar al pedir
+/// uno nuevo, para que nunca queden 2 links "vivos" al mismo tiempo.
+model password_reset_tokens {
+  token_id   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+
+  users users @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+/// Fuerza bruta real detectada — NUNCA se guarda cada intento fallido
+/// individual (sería ruido de alguien que se equivocó una vez); el conteo
+/// real vive en Redis con ventana deslizante (ver SecurityEventsService),
+/// solo al cruzar el umbral se escribe una fila real aquí. `type` cubre 2
+/// puntos reales de fuerza bruta: el de contraseña (`login_bruteforce`) y
+/// el de 2FA (`twofactor_bruteforce` — un punto real nuevo que no existía
+/// en los proyectos hermanos, porque ninguno tenía 2FA), más
+/// `refresh_token_reuse` (un refresh token robado y reusado).
+model security_events {
+  security_event_id String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fingerprint        String    @unique @db.VarChar(64)
+  type               String    @db.VarChar(30)
+  identifier         String
+  ip_address         String?   @db.VarChar(45)
+  user_agent         String?
+  attempts           Int
+  occurrence_count   Int       @default(1)
+  status             String    @default("nuevo") @db.VarChar(20)
+  first_seen_at      DateTime  @default(now()) @db.Timestamptz(6)
+  last_seen_at       DateTime  @default(now()) @db.Timestamptz(6)
+  resolved_at        DateTime? @db.Timestamptz(6)
+  resolved_note      String?
+}

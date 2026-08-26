@@ -1,0 +1,115 @@
+services:
+  # --- SERVICIO 1: BASE DE DATOS (omniuser_db) ---
+  omniuser_db:
+    image: postgres:18-alpine # Misma versión ya usada en Espiral/Dely Doggy — sin cambiarla sin confirmarlo.
+    container_name: omniuser_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:5436:5432" # Solo localhost. Puerto 5436 (Inari 5433, Espiral 5434, Dely Doggy 5435).
+    volumes:
+      - omniuser_db_data:/var/lib/postgresql # Postgres 18+ espera el mount aquí, ya no en /var/lib/postgresql/data.
+    networks:
+      - omniuser_network
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # --- SERVICIO 2: CACHÉ Y RATE LIMITING (omniuser_redis) ---
+  omniuser_redis:
+    image: redis:8-alpine # Licencia open source (AGPLv3) desde la v8 — mismo criterio real ya usado en los hermanos.
+    container_name: omniuser_redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "127.0.0.1:6381:6379" # Solo localhost. Puerto 6381 (Espiral 6379, Dely Doggy 6380).
+    volumes:
+      - omniuser_redis_data:/data
+    networks:
+      - omniuser_network
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- SERVICIO 3: BACKEND (omniuser_backend) ---
+  omniuser_backend:
+    build:
+      context: ./omniuser_backend
+      dockerfile: Dockerfile.dev
+    container_name: omniuser_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3030:3000" # API REST.
+      - "127.0.0.1:5521:5555" # Prisma Studio: SOLO localhost, nunca debe salir a la red.
+    environment:
+      NODE_ENV: development
+      ALLOWED_ORIGINS: "http://localhost:3031"
+      FRONTEND_URL: "http://localhost:3031"
+      REDIS_HOST: omniuser_redis
+      REDIS_PORT: 6379
+    depends_on:
+      omniuser_db:
+        condition: service_healthy
+      omniuser_redis:
+        condition: service_healthy
+    volumes:
+      - ./omniuser_backend:/usr/src/app
+      - omniuser_node_modules:/usr/src/app/node_modules
+    networks:
+      - omniuser_network
+    security_opt:
+      - no-new-privileges:true
+    # migrate deploy + seed encadenados al arranque, mismo patrón real ya
+    # probado en Espiral/Dely Doggy.
+    command: /bin/sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
+
+  # --- SERVICIO 4: FRONTEND (omniuser_frontend) ---
+  omniuser_frontend:
+    build:
+      context: ./omniuser_frontend
+      dockerfile: Dockerfile.dev
+    container_name: omniuser_frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3031:3000"
+    environment:
+      NODE_ENV: development
+      # El navegador del usuario habla directo al backend por el puerto del
+      # HOST (no por el nombre del servicio de docker-compose, que no
+      # resuelve fuera de la red interna).
+      NEXT_PUBLIC_API_URL: "http://localhost:3030"
+      # Server Components/Actions (corren DENTRO de este contenedor) le
+      # hablan al backend por la red interna de docker-compose.
+      INTERNAL_API_URL: "http://omniuser_backend:3000"
+    volumes:
+      - ./omniuser_frontend:/app
+      - /app/node_modules
+    networks:
+      - omniuser_network
+    depends_on:
+      - omniuser_backend
+    security_opt:
+      - no-new-privileges:true
+    command: npm run dev
+
+networks:
+  omniuser_network:
+
+volumes:
+  omniuser_db_data:
+  omniuser_redis_data:
+  omniuser_node_modules:

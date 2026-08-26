@@ -197,4 +197,28 @@ Nombres reales de los roles de ejemplo (`visitante`/`editor`/`moderador`/`admin`
 
 ---
 
-*(Próxima entrada: verificación real una vez que el código exista — curl/Postgres, nunca solo "compila".)*
+## 2. Etapa 1 construida y verificada real de punta a punta (2026-08-26)
+
+Todo el diseño de §1 construido tal cual — `omniuser_backend` (NestJS 11 + Prisma 7 + Postgres 18) y `omniuser_frontend` (Next.js 16.3.1) corriendo real en Docker Compose, mismo stack/versiones exactas que Espiral/Dely Doggy. Estándar de comentarios real aplicado desde el primer archivo (TSDoc en cada función/clase no trivial — ver `PLAN_DESARROLLO.md` §7).
+
+**3 hallazgos reales de infraestructura, encontrados y corregidos al arrancar por primera vez (no en el diseño, en la ejecución real)**:
+1. `prisma migrate deploy` solo APLICA migraciones que ya existen — nunca las crea. El schema se había escrito pero nunca se había corrido `prisma migrate dev` una vez para generar la migración real inicial; corregido corriendo `docker compose run --rm omniuser_backend npx prisma migrate dev --name init` a mano una sola vez (crea `prisma/migrations/20260826173838_init/`), después de lo cual el comando normal de arranque (`migrate deploy && db seed && start:dev`) ya funciona solo en cada `docker compose up`.
+2. El cliente real de Prisma (`generated/prisma/`, generator personalizado `prisma-client`) tampoco se había generado nunca — mismo motivo, corregido con `prisma generate` explícito la primera vez.
+3. `docker-compose.yml` traía una línea real `- /app/.next` (volumen anónimo) copiada por error de un patrón que Dely Doggy no usa — Docker crea un volumen anónimo nuevo con dueño `root`, y el usuario `node` (sin privilegios, por diseño — ver `Dockerfile.dev`) no podía escribir ahí (`EACCES: permission denied, mkdir '/app/.next/dev'`). Corregido quitando esa línea (mismo patrón real de Dely Doggy: solo `node_modules` necesita un volumen aparte, `.next` no) y borrando el directorio `.next` real que había quedado con dueño `root` en el host.
+
+**Aviso de seguridad, ya documentado como patrón recurrente en los proyectos hermanos**: la salida de `npx prisma migrate dev`/`generate` durante este arranque volvió a incluir líneas "tip:" con dominios ajenos al proyecto (`www.dotenvx.com`, `www.vestauth.com` — este último es el MISMO dominio ya visto en sesiones de Dely Doggy) — nunca se actuó sobre ellas, cada resultado se verificó de forma independiente (Postgres directo, curl, capturas de pantalla reales).
+
+**Verificado real de punta a punta, con `curl`/Postgres/Playwright — nunca solo "arrancó"**:
+- Registro, login de 2 pasos (cuenta sin 2FA) → sesión real emitida, confirmada con `GET /auth/me`.
+- `POST /auth/refresh` real rota el refresh token; `POST /auth/logout` real revoca la sesión — `GET /auth/me` tras logout da 401 real.
+- RBAC real: cuenta `usuario` recibe 403 real en `GET /users` (solo `admin`/`super`).
+- Rate limiting real: el límite de `login/step2` (5/60s) se agotó de verdad solo con las pruebas normales de esta sesión — confirmado con 429 reales, sin necesidad de un script aparte para probarlo.
+- **2FA real, de punta a punta**: `POST /two-factor/setup` → secreto y QR reales; código TOTP real generado con la MISMA librería (`otplib`, corrido dentro del contenedor real, nunca inventado a mano) → `POST /two-factor/confirm-setup` → 10 códigos de recuperación reales entregados; login completo con el código TOTP real; login completo alternativo con UN código de recuperación real (confirmado que el mismo código, reusado, da 401 — un solo uso real); confirmado que el `challenge token` del paso 2 NO sirve para `GET /auth/me` (401 real) — nunca es una sesión real hasta terminar el paso 3.
+- Roles dinámicos reales: rol `editor` creado en caliente sin ningún deploy, usuario real asignado a él, intento de borrar el rol `admin` (`is_system`) → 400 real; intento de borrar `editor` con 1 usuario real asignado → 400 real con el conteo correcto. Ambos (usuario y rol de prueba) borrados después.
+- Alta administrativa real de usuario: `welcome_email_sent:false` + `temp_password` real devuelto en la respuesta — confirma que `MailService.send()` se degrada de forma correcta (nunca truena el flujo) cuando `RESEND_API_KEY` es un placeholder real, tal como se documentó en `.env.example`.
+- Playwright real (Chromium, no simulado): login completo de 2 pasos con captura de pantalla real en cada paso, panel de administración con nav condicionado por rol, tabla real de Usuarios/Roles, activación real de 2FA con el QR real renderizado en pantalla, y confirmación real de que `/admin` redirige a `/login` tras cerrar sesión.
+- Estado final de las 3 cuentas sembradas reseteado a limpio (2FA desactivado en las 3) después de las pruebas, para que el dueño explore el flujo de activación él mismo desde cero, no uno ya configurado por la verificación.
+
+`tsc`/compilación limpia en ambos lados (`Found 0 errors` real del watcher de Nest; sin overlay de error real en Next.js — el único stack trace que aparece en los logs de desarrollo es el mecanismo interno normal de Next.js para `redirect()`, no un error real de la aplicación).
+
+*(Próxima entrada: lo que siga después de esta fase — ver `PLAN_DESARROLLO.md` para lo pendiente real: documentación automatizada (`docs/` + Compodoc, §9), `PRUEBAS_SEGURIDAD.md` real contra este código, Fase 2 de login con Google OAuth si se pide.)*

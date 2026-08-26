@@ -1,0 +1,27 @@
+# Imagen de DESARROLLO — usada por docker-compose.yml (hot-reload vía volumen montado).
+# No usar en producción: instala devDependencies y corre como "npm run start:dev".
+FROM node:24-alpine
+
+# tini como PID 1: reenvía señales (SIGTERM) correctamente a Node y evita procesos zombie.
+RUN apk add --no-cache tini
+
+WORKDIR /usr/src/app
+
+# Usuario sin privilegios — nunca correr la app como root dentro del
+# contenedor. node:alpine ya trae un usuario "node" en uid/gid 1000.
+COPY package*.json ./
+RUN npm install
+
+COPY --chown=node:node . .
+
+# Precrea "documentation/" con el dueño correcto — omniuser_compodoc monta
+# ahí un volumen con nombre nuevo (mismo motivo real que Dely Doggy: un
+# volumen nuevo nace de root si el path no existía ya en la imagen).
+RUN mkdir -p documentation && chown node:node documentation
+
+USER node
+
+EXPOSE 3000 5555
+
+ENTRYPOINT ["tini", "--"]
+CMD ["npm", "run", "start:dev"]

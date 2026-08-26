@@ -1,0 +1,18 @@
+# Imagen de DESARROLLO — usada por docker-compose.yml (hot-reload vía volumen montado).
+FROM node:24-alpine
+
+RUN apk add --no-cache tini
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY --chown=node:node . .
+
+USER node
+
+EXPOSE 3000
+
+ENTRYPOINT ["tini", "--"]
+CMD ["npm", "run", "dev"]
