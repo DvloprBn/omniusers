@@ -1,0 +1,29 @@
+# Secretos y entorno
+.env
+.env.local
+.env.*.local
+
+# Dependencias — sin '/' inicial a propósito, mismo motivo real que
+# Dely Doggy: este es (será) un monorepo con backend/frontend en
+# subcarpetas, y node_modules vive dentro de cada una, no solo en la raíz.
+node_modules
+
+# Builds
+dist
+build
+.next
+out
+# Cliente de Prisma generado (provider "prisma-client") — se regenera, no se versiona.
+generated
+
+# Documentación autogenerada (Compodoc) — se regenera del código real, no se versiona.
+documentation
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/
