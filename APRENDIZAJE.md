@@ -4,6 +4,49 @@
 
 ---
 
+## 0. Checklist de lectura — por dónde empezar
+
+Orden recomendado para leer el código de este proyecto: sigue el flujo real de una petición, no la estructura de carpetas, para que cada archivo nuevo llegue con contexto de para qué sirve.
+
+**Mapa antes que código**
+- [ ] `PLAN_DESARROLLO.md`
+- [ ] `DOCUMENTO_VIVO_ARQUITECTURA.md`
+- [ ] `omniuser_backend/prisma/schema.prisma` — el vocabulario de todo lo demás
+
+**1. El corazón: login en 3 pasos** (lee junto con §1, §2, §3, §5 de este archivo)
+- [ ] `omniuser_backend/src/auth/auth.service.ts` — sobre todo `loginStep1`/`loginStep2`/`loginStep3`
+- [ ] `omniuser_backend/src/auth/jwt-payload.interface.ts`
+- [ ] `omniuser_backend/src/auth/strategies/jwt.strategy.ts`
+- [ ] `omniuser_backend/src/auth/guards/jwt-auth.guard.ts` y `roles.guard.ts`
+- [ ] `omniuser_frontend/src/app/login/login-form.tsx`
+
+**2. Piezas puras** (lee la función y su `*.spec.ts` lado a lado — el test documenta el comportamiento esperado mejor que un comentario)
+- [ ] `omniuser_backend/src/common/utils/crypto.util.ts` + `crypto.util.spec.ts`
+- [ ] `omniuser_backend/src/common/utils/totp.util.ts` + `totp.util.spec.ts`
+- [ ] `omniuser_backend/src/common/utils/escape-html.util.ts` + `escape-html.util.spec.ts`
+
+**3. Jerarquía de roles** (lee junto con §7 y §10)
+- [ ] `omniuser_backend/src/users/users.service.ts` — el método `assertCanManageRole`
+- [ ] `omniuser_backend/src/users/users.service.spec.ts`
+- [ ] `omniuser_backend/src/roles/roles.service.ts`
+- [ ] `omniuser_backend/src/roles/roles.service.spec.ts`
+
+**4. 2FA completo** (lee junto con §4-§5)
+- [ ] `omniuser_backend/src/two-factor/`
+
+**5. El resto del backend, ya con contexto**
+- [ ] `omniuser_backend/src/security-events/` — fuerza bruta
+- [ ] `omniuser_backend/src/mail/`
+- [ ] `omniuser_backend/src/main.ts` y `app.module.ts` — cómo se conecta todo lo anterior
+
+**6. Frontend, mismo camino que el backend**
+- [ ] `omniuser_frontend/src/app/login/`
+- [ ] `omniuser_frontend/src/app/admin/layout.tsx` — el candado de rol en la UI
+- [ ] `omniuser_frontend/src/app/cuenta/2fa/`
+- [ ] `omniuser_frontend/src/app/dev/cuentas-de-prueba/` — útil para probar mientras lees
+
+---
+
 ## 1. Por qué 2 tokens de sesión, no 1
 
 `AuthService.issueTokenPair` (`omniuser_backend/src/auth/auth.service.ts`) siempre crea **dos** cosas distintas al terminar un login:
