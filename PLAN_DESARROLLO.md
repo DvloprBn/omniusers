@@ -1,4 +1,4 @@
-# Plan de Desarrollo — Omniskeleton (módulo Login)
+# Plan de Desarrollo — OmniUser (módulo Login)
 
 > Estrategia, alcance y decisiones. Nada de esto es código todavía — estamos en modo diseño (ver `CLAUDE.md`). Este documento se actualiza conforme se resuelvan las preguntas abiertas de abajo, no de una sola vez.
 
@@ -6,7 +6,7 @@
 
 `DocumentacionProyecto/Bridge/README.md` documenta un plan ya existente: Inari → Espiral → Dely Doggy → TecnoSolutions → OmniSkeleton, con OmniSkeleton deliberadamente al final (después de 3 negocios reales, para no abstraer con muy pocos casos).
 
-**Confirmado por el dueño**: este proyecto (`dvlopmnt/login`) **NO vive dentro de ese plan** — es aparte. Sirve para 2 cosas reales distintas: (1) complementar esa OmniSkeleton futura (lo que se aprenda/construya aquí es insumo real para ella, igual que `Bridge/` ya lo es), y (2) ir directo al portafolio del dueño como pieza propia, terminada y funcional. El nombre "Omniskeleton" se queda (el dueño no pidió cambiarlo), entendiendo que es un proyecto propio y no el hito formal del plan de 5.
+**Confirmado por el dueño**: este proyecto (`dvlopmnt/login`) **NO vive dentro de ese plan** — es aparte. Sirve para 2 cosas reales distintas: (1) complementar esa OmniSkeleton futura (lo que se aprenda/construya aquí es insumo real para ella, igual que `Bridge/` ya lo es), y (2) ir directo al portafolio del dueño como pieza propia, terminada y funcional. El nombre "OmniUser" se queda (el dueño no pidió cambiarlo), entendiendo que es un proyecto propio y no el hito formal del plan de 5.
 
 ## §0.1 Estándar real para este proyecto — no es solo "para practicar" (2026-08-26)
 
@@ -65,7 +65,7 @@ El dueño pidió "comenzar" sin resolver cada una explícitamente — se avanza 
    - **Fase 1 (con esto arrancamos):** la UX de Google — correo → "Siguiente" → contraseña → segundo factor, en pantallas separadas, en vez de un formulario único — sin depender de ninguna credencial externa.
    - **Fase 2 (más adelante, solo si se pide):** "Iniciar sesión con Google" real (OAuth2/OIDC) — mismo criterio que Stripe/Cloudinary en los proyectos hermanos: integración real, nunca simulada, pero necesita que el dueño genere credenciales reales en Google Cloud Console primero. Se documenta como fase aparte para no bloquear el arranque del proyecto en un trámite externo.
 3. **Roles — dinámicos**, no fijos. Dado que el objetivo explícito es poder servir de base a un proyecto de cliente real (§0.1) cuyo negocio todavía no se conoce, roles dinámicos (tabla `roles` editable, como Espiral) generalizan mejor que 5 roles fijos hardcodeados (como Dely Doggy) — es más trabajo real de construir, pero es la elección correcta para un esqueleto reutilizable.
-4. **Nombre del proyecto** — resuelto en §0: "Omniskeleton" se queda.
+4. **Nombre del proyecto** — resuelto en §0: "OmniUser" se queda.
 5. **Repositorio de git propio** — sí, desde el principio (no hasta que "haga falta"). Un proyecto pensado para el portafolio y para reutilizarse en un cliente necesita su propio historial real desde el primer commit, no heredar/mezclarse con el de Espiral o Dely Doggy.
 
 ## §7. Estándar de documentación de código — requisito de primera clase, no un extra

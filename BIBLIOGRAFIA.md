@@ -1,4 +1,4 @@
-# Bibliografía y Referencias de Estudio — Omniskeleton (Login)
+# Bibliografía y Referencias de Estudio — OmniUser (Login)
 
 > No es un listado al final — es la fuente real detrás de cada decisión de arquitectura de este proyecto, para que puedas ir a la fuente primaria en vez de confiar solo en la explicación de segunda mano. Se agrega una entrada nueva cada vez que una decisión real se apoye en algo de aquí — nunca todo de golpe al final.
 

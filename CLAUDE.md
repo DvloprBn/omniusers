@@ -1,6 +1,6 @@
-# Omniskeleton — Login
+# OmniUser — Login
 
-> Heredado de `projects/espiral/CLAUDE.md` y `projects/delyDoggy/CLAUDE.md` (2026-08-26) — el rol/estilo de trabajo se mantiene igual. La diferencia real con esos dos: **este no es un negocio real**. Es un proyecto de estudio — el usuario pidió explícitamente construir algo para aprender leyendo/jugando con el código real — que a la vez se diseña para poder reutilizarse como módulo en proyectos futuros (de ahí el nombre "Omniskeleton").
+> Heredado de `projects/espiral/CLAUDE.md` y `projects/delyDoggy/CLAUDE.md` (2026-08-26) — el rol/estilo de trabajo se mantiene igual. La diferencia real con esos dos: **este no es un negocio real**. Es un proyecto de estudio — el usuario pidió explícitamente construir algo para aprender leyendo/jugando con el código real — que a la vez se diseña para poder reutilizarse como módulo en proyectos futuros (de ahí el nombre "OmniUser").
 
 **Primer módulo real: sistema de acceso (login).** Simula 2 superficies — un sitio público y una sección de administración — con roles dinámicos reales que se pueden probar cambiando de cuenta, más 2 piezas que NINGÚN proyecto hermano tiene todavía: 2FA real (TOTP) y un login con la UX de Google (Fase 1: correo → contraseña → segundo factor en pasos separados; Fase 2 futura: "Iniciar sesión con Google" real vía OAuth). Ver `PLAN_DESARROLLO.md` para el alcance completo.
 

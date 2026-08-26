@@ -1,4 +1,4 @@
-# Pruebas de Seguridad — Omniskeleton (Login)
+# Pruebas de Seguridad — OmniUser (Login)
 
 > Complementa (no reemplaza) `DocumentacionProyecto/Bridge/CHECKLIST_SEGURIDAD_PRELANZAMIENTO.md`. Ese checklist es una lista de preguntas destiladas de hallazgos reales que ya fallaron antes en otro proyecto — este documento es más exhaustivo: cubre sistemáticamente el **OWASP API Security Top 10** completo contra cada endpoint real que se construya, para no depender solo de lo que ya se conoce que puede fallar.
 >

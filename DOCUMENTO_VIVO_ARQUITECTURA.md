@@ -1,4 +1,4 @@
-# Documento Vivo de Arquitectura — Omniskeleton (Login)
+# Documento Vivo de Arquitectura — OmniUser (Login)
 
 > Detalle técnico real de cada decisión de arquitectura conforme se toma — el "por qué" detrás de lo que dice `ESTADO_PROYECTO.md`.
 
@@ -12,8 +12,8 @@ Mismo patrón real de los 2 hermanos — 2 apps + infraestructura, un solo `dock
 
 ```
 dvlopmnt/login/
-├── omniskeleton_backend/     # NestJS + Prisma
-├── omniskeleton_frontend/    # Next.js
+├── omniuser_backend/     # NestJS + Prisma
+├── omniuser_frontend/    # Next.js
 ├── docs/                     # Portal MkDocs (ver PLAN_DESARROLLO.md §9)
 ├── docker-compose.yml
 └── (la documentación ya creada: CLAUDE.md, PLAN_DESARROLLO.md, etc.)
@@ -21,17 +21,17 @@ dvlopmnt/login/
 
 ### 1.2 Puertos — siguiente libre en la secuencia real ya usada en este host
 
-Inari usa 3000/3001/5433; Espiral usa 3010/3011/5434/6379/8092/8093; Dely Doggy usa 3020/3021/5435/6380/5520/8094/8095. Omniskeleton sigue la secuencia:
+Inari usa 3000/3001/5433; Espiral usa 3010/3011/5434/6379/8092/8093; Dely Doggy usa 3020/3021/5435/6380/5520/8094/8095. OmniUser sigue la secuencia:
 
 | Servicio | Puerto host | Nota |
 |---|---|---|
-| `omniskeleton_backend` (API) | 3030 | |
-| `omniskeleton_frontend` | 3031 | |
-| `omniskeleton_db` (Postgres) | 5436 | `127.0.0.1` únicamente |
-| `omniskeleton_redis` | 6381 | `127.0.0.1` únicamente — rate limiting |
+| `omniuser_backend` (API) | 3030 | |
+| `omniuser_frontend` | 3031 | |
+| `omniuser_db` (Postgres) | 5436 | `127.0.0.1` únicamente |
+| `omniuser_redis` | 6381 | `127.0.0.1` únicamente — rate limiting |
 | Prisma Studio | 5521 | `127.0.0.1` únicamente |
-| `omniskeleton_docs` (MkDocs) | 8096 | `127.0.0.1` únicamente |
-| `omniskeleton_compodoc` | 8097 | `127.0.0.1` únicamente |
+| `omniuser_docs` (MkDocs) | 8096 | `127.0.0.1` únicamente |
+| `omniuser_compodoc` | 8097 | `127.0.0.1` únicamente |
 
 ### 1.3 Schema real (Prisma) — primera versión
 
