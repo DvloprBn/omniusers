@@ -90,3 +90,15 @@
 3. **Partir la página en varios límites de Suspense más finos**: lo esencial (nav, hero) se manda al instante; secciones menos críticas (reseñas, contenido relacionado, promociones) se cargan aparte, cada una con su propio espacio reservado — más quirúrgico, más reestructuración real de la página.
 
 *(Ambas lecciones #7 y #8 descubiertas en Espiral 2026-08-27, investigando un reporte real de PageSpeed Insights — ver `../Espiral/DOCUMENTO_VIVO_ARQUITECTURA.md` §2.30 para el caso completo con cifras/rutas reales.)*
+
+---
+
+## 9. Un ID de recurso externo, reutilizado, tiene que asumir que el proveedor puede dejar de reconocerlo
+
+**La regla**: cualquier campo propio que guarda el ID de un recurso creado en un sistema de terceros (un `PaymentIntent` de Stripe, una sesión de otro proveedor, cualquier `external_reference`) y que el código **reutiliza** en visitas futuras (para no crear uno nuevo cada vez) necesita asumir que ese proveedor externo puede, en algún momento, dejar de reconocer ese ID — sin que el estado guardado en la propia base de datos se entere solo. La causa real no importa (datos de prueba limpiados desde el panel del proveedor, llaves de API rotadas después de crearlo, el propio proveedor lo purgó por antigüedad) — lo que importa es que el código de reuso NUNCA debe asumir que "existe en mi base de datos" implica "el proveedor externo todavía lo reconoce".
+
+**Por qué se pasa por alto tan fácil**: el código de reuso normalmente sí contempla el estado "normal" de terminación del recurso (ej. un `PaymentIntent` en `status:'canceled'`) y cae correctamente a "crear uno nuevo" en ese caso — dando la falsa sensación de que el camino de reuso ya es robusto. El caso real que se olvida es distinto: el proveedor rechaza la propia llamada de *recuperar* el recurso (`retrieve()`/`get()`), lanzando una excepción en vez de regresar un objeto con un estado reconocible — y si esa llamada no está en un `try/catch`, la excepción se propaga sin control hasta donde sea que el flujo la deje, reventando toda la pantalla/petición que dependía de ese recurso.
+
+**El patrón correcto**: envolver la llamada de recuperación en `try/catch`, capturar específicamente el tipo de error que el SDK del proveedor usa para "esto ya no existe" (nunca un `catch` genérico que trague cualquier error, incluidos los reales — auth, rate limit, red), y tratarlo exactamente igual que el caso "normal" de terminación ya contemplado: caer a crear un recurso nuevo.
+
+*(Descubierta en Espiral 2026-08-27, un `PaymentIntent` de Stripe reutilizado que dejó de existir tumbaba por completo la pantalla de pago de un cliente real — ver `../Espiral/DOCUMENTO_VIVO_ARQUITECTURA.md` §2.33 para el caso completo con el error real y el fix aplicado. El mismo código, portado casi literal a Dely Doggy, se corrigió ahí también de forma preventiva antes de que ocurriera en producción real.)*
