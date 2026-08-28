@@ -102,3 +102,17 @@
 **El patrón correcto**: envolver la llamada de recuperación en `try/catch`, capturar específicamente el tipo de error que el SDK del proveedor usa para "esto ya no existe" (nunca un `catch` genérico que trague cualquier error, incluidos los reales — auth, rate limit, red), y tratarlo exactamente igual que el caso "normal" de terminación ya contemplado: caer a crear un recurso nuevo.
 
 *(Descubierta en Espiral 2026-08-27, un `PaymentIntent` de Stripe reutilizado que dejó de existir tumbaba por completo la pantalla de pago de un cliente real — ver `../Espiral/DOCUMENTO_VIVO_ARQUITECTURA.md` §2.33 para el caso completo con el error real y el fix aplicado. El mismo código, portado casi literal a Dely Doggy, se corrigió ahí también de forma preventiva antes de que ocurriera en producción real.)*
+
+---
+
+## 10. Un archivo de notas personal con secretos, abierto en el IDE, se filtra solo — sin que nadie lo pegue a propósito
+
+**La regla**: cuando un asistente de IA está integrado con el editor (VSCode u otro), la integración normalmente comparte de forma automática lo que el usuario tiene **seleccionado** en cualquier archivo abierto — sin importar en qué proyecto o carpeta viva ese archivo, y sin que el usuario lo pegue directamente en la conversación. Si ese archivo contiene un secreto real (una llave de API, una contraseña, un token) y el usuario simplemente lo selecciona (para copiarlo a otro lado, por ejemplo), el secreto completo llega a la conversación de todos modos.
+
+**Por qué se pasa por alto tan fácil**: instrucciones tipo "nunca me pegues la llave secreta aquí, solo dime lo que ves" funcionan bien contra que el usuario la escriba o la pegue a propósito — pero no cubren este mecanismo, porque no es una acción deliberada del usuario. La instrucción "ignora ese archivo" tampoco resuelve nada: la IA no tiene forma de decirle a la integración del editor "no me compartas selecciones de este archivo en particular" — es un mecanismo del lado del editor/harness, no algo que la IA elige u puede desactivar.
+
+**La consecuencia real**: cualquier secreto que aparezca en una conversación de este tipo debe tratarse como comprometido de inmediato, sin importar el mecanismo por el que llegó — porque la conversación queda guardada como registro, y "nadie más lo va a ver" no es una garantía real una vez que ya está escrito ahí.
+
+**El hábito correcto, del lado del usuario, no de la IA**: nunca guardar un secreto completo (llave `sk_live_...`/`sk_test_...`, contraseña, token) en texto plano dentro de un archivo de notas personal que se vaya a tener abierto o seleccionar mientras una sesión de IA con integración de editor esté activa — usar un gestor de contraseñas real, o al menos evitar seleccionar esa línea específica mientras se trabaja con el asistente. Y si de todos modos ocurre: rotar el secreto expuesto de inmediato, no asumir que "no pasó nada" solo porque fue sin querer.
+
+*(Descubierta en Espiral 2026-08-27/28, activando Stripe en modo Live real — la llave secreta `sk_live_...` quedó expuesta 2 veces en la misma conversación por este mecanismo, ambas rotadas de inmediato — ver `../Espiral/DOCUMENTO_VIVO_ARQUITECTURA.md` §2.35 para el caso completo.)*
