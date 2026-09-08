@@ -4,7 +4,7 @@
 
 **Primer módulo real: sistema de acceso (login).** Simula 2 superficies — un sitio público y una sección de administración — con roles dinámicos reales que se pueden probar cambiando de cuenta, más 2 piezas que NINGÚN proyecto hermano tiene todavía: 2FA real (TOTP) y un login con la UX de Google (Fase 1: correo → contraseña → segundo factor en pasos separados; Fase 2 futura: "Iniciar sesión con Google" real vía OAuth). Ver `PLAN_DESARROLLO.md` para el alcance completo.
 
-**Confirmado por el dueño (2026-08-26)**: este proyecto vive APARTE del plan de 5 documentado en `DocumentacionProyecto/Bridge/README.md` (Inari → Espiral → Dely Doggy → TecnoSolutions → OmniSkeleton) — no es su hito formal, es un proyecto propio que complementa esa OmniSkeleton futura y que además va directo al portafolio del dueño. Aunque el motivo principal es que el dueño pueda leer y entender todo el código, **el resultado tiene que ser cien por ciento funcional**, al grado de poder servir de base real a un proyecto de cliente — ver `PLAN_DESARROLLO.md` §0/§0.1 para el detalle completo.
+**Confirmado por el dueño (2026-08-26)**: este proyecto vive APARTE del plan de 5 documentado en `../../DocumentacionProyecto/Bridge/README.md` (Inari → Espiral → Dely Doggy → TecnoSolutions → OmniSkeleton) — no es su hito formal, es un proyecto propio que complementa esa OmniSkeleton futura y que además va directo al portafolio del dueño. Aunque el motivo principal es que el dueño pueda leer y entender todo el código, **el resultado tiene que ser cien por ciento funcional**, al grado de poder servir de base real a un proyecto de cliente — ver `PLAN_DESARROLLO.md` §0/§0.1 para el detalle completo.
 
 ## Rol
 # SYSTEM PROMPT: PRINCIPAL E-COMMERCE & PWA ARCHITECT (TECH & GROWTH LEAD)
@@ -59,7 +59,7 @@ Asume este rol de inmediato. Saluda confirmando de forma concisa que tus sistema
 - Bitácora de aprendizaje del usuario — **el propósito central de este proyecto**, no un extra → [`APRENDIZAJE.md`](./APRENDIZAJE.md)
 - Pruebas de seguridad exhaustivas, documentadas para que el dueño las pueda replicar él mismo → [`PRUEBAS_SEGURIDAD.md`](./PRUEBAS_SEGURIDAD.md)
 - Fuentes reales detrás de cada decisión de arquitectura (RFCs, OWASP, docs oficiales) → [`BIBLIOGRAFIA.md`](./BIBLIOGRAFIA.md)
-- Lecciones técnicas y checklist de seguridad ya aprendidos en Espiral/Dely Doggy, generalizados para reutilizar aquí → [`DocumentacionProyecto/Bridge/`](DocumentacionProyecto/Bridge/)
+- Lecciones técnicas y checklist de seguridad ya aprendidos en Espiral/Dely Doggy, generalizados para reutilizar aquí — externo, compartido entre proyectos (2026-09-08: ya no vive copiado dentro de este repo) → [`../../DocumentacionProyecto/Bridge/`](../../DocumentacionProyecto/Bridge/)
 - Documentación autogenerada (una vez que exista backend real que documentar) → portal MkDocs + Compodoc, misma arquitectura real que `delidogy_docs`/`delidogy_compodoc` — ver `PLAN_DESARROLLO.md` §9.
 
 **Cómo trabajamos en este proyecto (lo que cambia real contra Espiral/Dely Doggy):**
@@ -70,4 +70,5 @@ Asume este rol de inmediato. Saluda confirmando de forma concisa que tus sistema
 - Diseñado desde el día uno para ser reutilizable: nombres genéricos (nunca atados a una marca), variables de entorno documentadas, Docker Compose autocontenible, repositorio de git propio desde el primer commit — para poder copiarse a un proyecto futuro casi tal cual.
 - No escribir código de aplicación mientras estemos en modo de diseño/estrategia — solo cuando el usuario confirme explícitamente que el plan está listo. Actualizar documentación/schema sí es válido en cualquier momento para registrar decisiones ya tomadas.
 - Antes de diseñar algo desde cero, revisar si Espiral/Dely Doggy ya lo resolvieron — reutilizar el patrón real probado (JWT en cookie httpOnly, rotación de refresh token con ventana de gracia, `RolesGuard`) en vez de reinventarlo. Lo genuinamente nuevo aquí (2FA, login estilo Google) se diseña aparte, sin inventar que ya existe un precedente que no existe.
+- `DocumentacionProyecto/Bridge/` real vive AFUERA de este repo (`/home/bn/DvloprBn/DocumentacionProyecto/Bridge/`, compartido con Espiral/Dely Doggy/DvloprBn, decisión explícita del dueño 2026-09-08 — antes existían 3 copias reales que ya habían divergido). Editarlo ahí directo, nunca recrear una copia real dentro de este repo.
 - Idioma: español para toda la documentación y la conversación.
