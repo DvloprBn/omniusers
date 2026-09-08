@@ -4,7 +4,7 @@
 
 ## §0. Relación real con el plan de 5 proyectos — resuelto (2026-08-26)
 
-`DocumentacionProyecto/Bridge/README.md` documenta un plan ya existente: Inari → Espiral → Dely Doggy → TecnoSolutions → OmniSkeleton, con OmniSkeleton deliberadamente al final (después de 3 negocios reales, para no abstraer con muy pocos casos).
+`../../DocumentacionProyecto/Bridge/README.md` (externo, compartido entre proyectos desde 2026-09-08) documenta un plan ya existente: Inari → Espiral → Dely Doggy → TecnoSolutions → OmniSkeleton, con OmniSkeleton deliberadamente al final (después de 3 negocios reales, para no abstraer con muy pocos casos).
 
 **Confirmado por el dueño**: este proyecto (`dvlopmnt/login`) **NO vive dentro de ese plan** — es aparte. Sirve para 2 cosas reales distintas: (1) complementar esa OmniSkeleton futura (lo que se aprenda/construya aquí es insumo real para ella, igual que `Bridge/` ya lo es), y (2) ir directo al portafolio del dueño como pieza propia, terminada y funcional. El nombre "OmniUser" se queda (el dueño no pidió cambiarlo), entendiendo que es un proyecto propio y no el hito formal del plan de 5.
 

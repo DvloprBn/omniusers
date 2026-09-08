@@ -1,6 +1,6 @@
 # Pruebas de Seguridad — OmniUser (Login)
 
-> Complementa (no reemplaza) `DocumentacionProyecto/Bridge/CHECKLIST_SEGURIDAD_PRELANZAMIENTO.md`. Ese checklist es una lista de preguntas destiladas de hallazgos reales que ya fallaron antes en otro proyecto — este documento es más exhaustivo: cubre sistemáticamente el **OWASP API Security Top 10** completo contra cada endpoint real de este backend.
+> Complementa (no reemplaza) `../../DocumentacionProyecto/Bridge/CHECKLIST_SEGURIDAD_PRELANZAMIENTO.md` (externo, compartido entre proyectos desde 2026-09-08). Ese checklist es una lista de preguntas destiladas de hallazgos reales que ya fallaron antes en otro proyecto — este documento es más exhaustivo: cubre sistemáticamente el **OWASP API Security Top 10** completo contra cada endpoint real de este backend.
 >
 > **Formato de cada prueba** (para que la puedas replicar tú mismo, no solo leer que "ya se probó"):
 > 1. **Qué vulnerabilidad prueba** y por qué importa en este caso concreto.

@@ -28,6 +28,6 @@
 ## Código real de referencia (los propios proyectos hermanos)
 
 - `projects/espiral/` — roles dinámicos, `RolesGuard`, arquitectura general.
-- `projects/delyDoggy/` — misma base de auth (JWT/refresh/rotación), 2 rondas reales de auditoría de seguridad ya corregidas, `DocumentacionProyecto/Bridge/` con las lecciones ya generalizadas.
+- `projects/delyDoggy/` — misma base de auth (JWT/refresh/rotación), 2 rondas reales de auditoría de seguridad ya corregidas; las lecciones ya generalizadas viven en `../../DocumentacionProyecto/Bridge/` (externo, compartido entre proyectos desde 2026-09-08).
 
 *(Sin entradas todavía sobre 2FA/TOTP aplicado en código real, ni sobre Google OAuth — se agregan cuando se diseñe esa pieza en concreto.)*
