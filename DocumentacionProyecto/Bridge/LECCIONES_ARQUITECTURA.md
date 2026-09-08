@@ -116,3 +116,17 @@
 **El hábito correcto, del lado del usuario, no de la IA**: nunca guardar un secreto completo (llave `sk_live_...`/`sk_test_...`, contraseña, token) en texto plano dentro de un archivo de notas personal que se vaya a tener abierto o seleccionar mientras una sesión de IA con integración de editor esté activa — usar un gestor de contraseñas real, o al menos evitar seleccionar esa línea específica mientras se trabaja con el asistente. Y si de todos modos ocurre: rotar el secreto expuesto de inmediato, no asumir que "no pasó nada" solo porque fue sin querer.
 
 *(Descubierta en Espiral 2026-08-27/28, activando Stripe en modo Live real — la llave secreta `sk_live_...` quedó expuesta 2 veces en la misma conversación por este mecanismo, ambas rotadas de inmediato — ver `../Espiral/DOCUMENTO_VIVO_ARQUITECTURA.md` §2.35 para el caso completo.)*
+
+---
+
+## 11. Una app Next.js App Router que solo se ha corrido con `next dev` casi siempre truena la primera vez que hace `next build` — por la generación estática, no por el código
+
+**La regla**: `next dev` renderiza cada página bajo demanda cuando la visitas; `next build` intenta PRERENDERIZAR todas las rutas por adelantado. Si el sitio depende de datos reales del backend en cada request (sesión, carrito, catálogo, tema activo) y el build no tiene backend alcanzable — que es lo normal: `INTERNAL_API_URL` no se pasa como build arg a propósito — cada ruta se cuelga esperando una respuesta que no llega (60s × 3 reintentos por ruta) y el build falla. La compilación y el type-check pasan limpio; el fallo es solo la fase "Generating static pages".
+
+**La solución**: `export const dynamic = 'force-dynamic'` en el layout raíz (`app/layout.tsx`) — cascada a TODA la app (público, cuenta, admin) desde un solo lugar. Si alguna ruta sí califica para estático de verdad (rara en un sitio con sesión), se le pone su propio override; el default correcto para este tipo de proyecto es dinámico.
+
+**Cómo se ve el síntoma**: `next build` imprime decenas de líneas `Failed to build /<ruta> (attempt 1 of 3) because it took more than 60 seconds`, para casi todas las rutas a la vez. No es un error de tipos ni de import — el build "compiló" bien y luego se atora.
+
+**El hábito correcto**: correr `next build` (no solo `next dev`) al menos una vez ANTES de armar el Dockerfile de producción — es el único momento en que este problema aparece, y siempre aparece tarde (auditando archivos de despliegue) si no se hace antes.
+
+*(Espiral 2026-08-12 y Dely Doggy 2026-09-01 — el mismo hallazgo exacto, ambas veces al construir el paquete de despliegue por primera vez. Dely Doggy incluso traía ya el comentario "se agrega force-dynamic cuando haga falta" en `layout.tsx`, sin la línea. Ver `../Espiral/DOCUMENTO_VIVO_ARQUITECTURA.md` y `../../DOCUMENTO_VIVO_ARQUITECTURA.md` §2.30.)*
